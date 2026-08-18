@@ -1,5 +1,6 @@
 # Local CSV/Excel to JSON Bulk Data Transformer
 
+> 🚀 **[View Live Demo](https://samithatharanga.github.io/local-csv-json-transformer/)** 
 A privacy-first, client-side web application for converting **CSV, XLSX, and XLS** files into JSON. The selected source file is processed in the browser; the application has no backend upload endpoint.
 
 ## File structure
