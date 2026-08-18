@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Local CSV & Excel to JSON Converter — Private, Client-Side Bulk Transformer</title>
+  <meta name="description" content="Convert CSV, XLSX and XLS files to JSON locally in your browser. Privacy-first, client-side spreadsheet parsing with no server uploads, bulk processing, JSON preview and export." />
+  <meta name="keywords" content="csv to json, excel to json, xlsx to json, local csv converter, secure data converter, client-side csv parser, privacy-first excel to json, offline data transformer, bulk data transformer" />
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+  <meta name="author" content="Local Data Transformer" />
+  <meta name="theme-color" content="#f8fafc" />
+  <meta name="color-scheme" content="light" />
+  <link rel="canonical" href="https://YOUR-DOMAIN.example/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Local CSV & Excel to JSON Converter" />
+  <meta property="og:description" content="Transform CSV and Excel data into JSON entirely in your browser. No file uploads. No server processing." />
+  <meta property="og:url" content="https://YOUR-DOMAIN.example/" />
+  <meta property="og:site_name" content="Local Data Transformer" />
+  <meta property="og:image" content="https://YOUR-DOMAIN.example/og-local-data-transformer.png" />
+  <meta property="og:image:alt" content="Local CSV and Excel to JSON data transformer interface" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Private CSV & Excel to JSON Converter" />
+  <meta name="twitter:description" content="A privacy-first client-side CSV and Excel to JSON bulk data transformer." />
+  <meta name="twitter:image" content="https://YOUR-DOMAIN.example/og-local-data-transformer.png" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Local CSV/Excel to JSON Bulk Data Transformer",
+    "applicationCategory": "DeveloperApplication",
+    "applicationSubCategory": "Data Conversion Tool",
+    "operatingSystem": "Any modern web browser",
+    "browserRequirements": "Requires JavaScript, Web Workers recommended",
+    "description": "A privacy-first browser application that converts CSV, XLSX and XLS spreadsheet data to JSON without uploading source files to a server.",
+    "url": "https://YOUR-DOMAIN.example/",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "featureList": [
+      "Client-side CSV to JSON conversion",
+      "Client-side Excel to JSON conversion",
+      "Web Worker spreadsheet parsing",
+      "Multi-sheet Excel support",
+      "JSON preview, copy and download",
+      "No source-file upload"
+    ]
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is my CSV or Excel file uploaded to a server?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. The converter reads and transforms supported spreadsheet files inside your browser. The application does not send the selected source file to an application server."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Why use a client-side CSV parser for sensitive data?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Client-side processing reduces data exposure because the source file can be parsed and transformed on the user device instead of being transferred to a remote conversion service."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I convert XLSX or XLS files to JSON?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. The tool supports CSV, XLSX and XLS input, lets you select a worksheet when multiple sheets exist, and exports JSON records using the chosen header row."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does the tool handle large spreadsheets without freezing the page?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Spreadsheet parsing is delegated to a Web Worker when the browser permits it, and transformation plus JSON serialization are processed in chunks that periodically yield control back to the interface."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <!-- Tailwind Browser CDN is included because this project explicitly targets a CDN-only setup. -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: rgba(148, 163, 184, 0.22);
+      --glass: rgba(255, 255, 255, 0.72);
+      --glass-strong: rgba(255, 255, 255, 0.9);
+      --accent: #2563eb;
+      --accent-2: #7c3aed;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 10%, rgba(59, 130, 246, 0.18), transparent 26rem),
+        radial-gradient(circle at 86% 12%, rgba(168, 85, 247, 0.14), transparent 24rem),
+        linear-gradient(180deg, #f8fafc 0%, #eef2ff 44%, #f8fafc 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    .glass {
+      background: var(--glass);
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      box-shadow: 0 28px 80px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255,255,255,.85);
+      backdrop-filter: blur(22px) saturate(130%);
+      -webkit-backdrop-filter: blur(22px) saturate(130%);
+    }
+
+    .glass-strong {
+      background: var(--glass-strong);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 22px 60px rgba(15, 23, 42, 0.08);
+      backdrop-filter: blur(26px);
+      -webkit-backdrop-filter: blur(26px);
+    }
+
+    .grid-glow {
+      background-image:
+        linear-gradient(rgba(148,163,184,.10) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148,163,184,.10) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,.75), transparent 82%);
+      -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,.75), transparent 82%);
+    }
+
+    .badge-dot::before {
+      content: "";
+      width: .5rem;
+      height: .5rem;
+      border-radius: 999px;
+      background: #10b981;
+      box-shadow: 0 0 0 4px rgba(16,185,129,.12);
+    }
+
+    #drop-zone[data-dragging="true"] {
+      border-color: rgba(37,99,235,.75);
+      background: rgba(239,246,255,.92);
+      transform: translateY(-1px);
+      box-shadow: 0 18px 50px rgba(37,99,235,.12);
+    }
+
+    #status-panel[data-state="idle"] .status-icon { background: #e2e8f0; color: #475569; }
+    #status-panel[data-state="working"] .status-icon { background: #dbeafe; color: #2563eb; }
+    #status-panel[data-state="success"] .status-icon { background: #d1fae5; color: #059669; }
+    #status-panel[data-state="warning"] .status-icon { background: #fef3c7; color: #d97706; }
+    #status-panel[data-state="error"] .status-icon { background: #fee2e2; color: #dc2626; }
+
+    .audit-item {
+      border-left: 2px solid rgba(148,163,184,.35);
+      padding-left: .85rem;
+    }
+
+    .control-input {
+      width: 100%;
+      border: 1px solid rgba(148,163,184,.28);
+      background: rgba(255,255,255,.8);
+      border-radius: 1rem;
+      padding: .78rem .9rem;
+      outline: none;
+      transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+
+    .control-input:focus {
+      border-color: rgba(37,99,235,.58);
+      box-shadow: 0 0 0 4px rgba(37,99,235,.10);
+      background: white;
+    }
+
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+      outline: 3px solid rgba(37,99,235,.35);
+      outline-offset: 3px;
+    }
+
+    .is-processing button:not(:disabled) { cursor: progress; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-white focus:px-4 focus:py-3 focus:shadow-xl">Skip to main content</a>
+
+  <div class="pointer-events-none fixed inset-0 -z-10 grid-glow"></div>
+
+  <header class="sticky top-0 z-50 border-b border-white/60 bg-white/70 backdrop-blur-2xl" aria-label="Primary navigation">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+      <a href="#top" class="flex items-center gap-3 font-semibold tracking-tight text-slate-950" aria-label="Local Data Transformer home">
+        <span class="grid size-10 place-items-center rounded-2xl bg-slate-950 text-white shadow-lg shadow-slate-900/10" aria-hidden="true">{ }</span>
+        <span>Local Data Transformer</span>
+      </a>
+
+      <nav class="hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex" aria-label="Site sections">
+        <a class="transition hover:text-slate-950" href="#tool">Converter</a>
+        <a class="transition hover:text-slate-950" href="#security">Privacy</a>
+        <a class="transition hover:text-slate-950" href="#how-it-works">How it works</a>
+        <a class="transition hover:text-slate-950" href="#faq">FAQ</a>
+      </nav>
+
+      <a href="#tool" class="rounded-full bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:-translate-y-0.5 hover:bg-slate-800">Open converter</a>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section id="top" class="relative overflow-hidden" aria-labelledby="hero-title">
+      <div class="mx-auto grid max-w-7xl items-center gap-12 px-4 pb-20 pt-20 sm:px-6 lg:grid-cols-[1.08fr_.92fr] lg:px-8 lg:pb-28 lg:pt-28">
+        <div>
+          <div class="badge-dot mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-200/70 bg-emerald-50/80 px-3.5 py-2 text-xs font-semibold uppercase tracking-[.16em] text-emerald-800">
+            100% client-side source-file processing
+          </div>
+          <h1 id="hero-title" class="max-w-4xl text-5xl font-semibold tracking-[-0.045em] text-slate-950 sm:text-6xl lg:text-7xl lg:leading-[1.02]">
+            Convert CSV & Excel to JSON <span class="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">without uploading your data.</span>
+          </h1>
+          <p class="mt-6 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
+            A privacy-first Excel to JSON and CSV to JSON bulk data transformer built for developers, analysts, operations teams, and anyone handling sensitive spreadsheets. Your selected file is parsed locally in the browser—no application server upload required.
+          </p>
+
+          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+            <a href="#tool" class="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3.5 font-semibold text-white shadow-xl shadow-slate-950/15 transition hover:-translate-y-0.5 hover:bg-slate-800">
+              Convert a file locally
+            </a>
+            <a href="#security" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white/80 px-6 py-3.5 font-semibold text-slate-700 shadow-sm transition hover:bg-white">
+              See the privacy model
+            </a>
+          </div>
+
+          <div class="mt-8 flex flex-wrap gap-x-7 gap-y-3 text-sm text-slate-500" aria-label="Key converter features">
+            <span>✓ CSV, XLSX & XLS</span>
+            <span>✓ Multi-sheet workbooks</span>
+            <span>✓ Web Worker parsing</span>
+            <span>✓ Copy or download JSON</span>
+          </div>
+        </div>
+
+        <aside class="glass rounded-[2rem] p-4 sm:p-6" aria-label="Local processing overview">
+          <div class="rounded-[1.6rem] border border-white/80 bg-slate-950 p-5 text-slate-100 shadow-2xl shadow-indigo-950/15 sm:p-7">
+            <div class="flex items-center justify-between gap-4 border-b border-white/10 pb-5">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[.2em] text-slate-400">Privacy pipeline</p>
+                <p class="mt-1 font-semibold">Your browser is the workspace</p>
+              </div>
+              <span class="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-300">No app upload</span>
+            </div>
+
+            <ol class="mt-6 space-y-4" aria-label="Client-side processing steps">
+              <li class="flex gap-4">
+                <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-white/10 text-sm font-semibold">1</span>
+                <div><p class="font-medium">Choose a spreadsheet</p><p class="mt-1 text-sm leading-6 text-slate-400">The browser receives the local File object you selected.</p></div>
+              </li>
+              <li class="flex gap-4">
+                <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-white/10 text-sm font-semibold">2</span>
+                <div><p class="font-medium">Parse off the UI thread</p><p class="mt-1 text-sm leading-6 text-slate-400">SheetJS runs in a Web Worker when browser policy permits.</p></div>
+              </li>
+              <li class="flex gap-4">
+                <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-white/10 text-sm font-semibold">3</span>
+                <div><p class="font-medium">Transform deterministic records</p><p class="mt-1 text-sm leading-6 text-slate-400">Header validation, empty-row handling and JSON serialization are traceable.</p></div>
+              </li>
+              <li class="flex gap-4">
+                <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-white/10 text-sm font-semibold">4</span>
+                <div><p class="font-medium">Export locally</p><p class="mt-1 text-sm leading-6 text-slate-400">Copy the result or generate a local JSON download.</p></div>
+              </li>
+            </ol>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="tool" class="scroll-mt-24 py-20" aria-labelledby="tool-title">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto mb-10 max-w-3xl text-center">
+          <p class="text-sm font-semibold uppercase tracking-[.2em] text-blue-600">Live converter workspace</p>
+          <h2 id="tool-title" class="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-5xl">Bulk spreadsheet transformation, directly on your device.</h2>
+          <p class="mt-4 text-base leading-7 text-slate-600 sm:text-lg">Drop a file, select an Excel sheet if needed, choose deterministic transformation rules, then preview, copy, or download clean JSON.</p>
+        </div>
+
+        <div class="glass rounded-[2rem] p-3 sm:p-5 lg:p-6">
+          <div class="grid gap-5 xl:grid-cols-[.88fr_1.12fr]">
+            <div class="space-y-5">
+              <section class="glass-strong rounded-[1.5rem] p-5" aria-labelledby="upload-heading">
+                <div class="mb-4 flex items-start justify-between gap-4">
+                  <div>
+                    <h3 id="upload-heading" class="font-semibold text-slate-950">1. Choose source data</h3>
+                    <p class="mt-1 text-sm leading-6 text-slate-500">Supported: .csv, .xlsx, .xls · browser safety limit: 100 MB.</p>
+                  </div>
+                  <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Local only</span>
+                </div>
+
+                <label id="drop-zone" for="file-input" tabindex="0" role="button" class="block cursor-pointer rounded-[1.4rem] border border-dashed border-slate-300 bg-slate-50/80 p-7 text-center transition" aria-describedby="upload-help">
+                  <span class="mx-auto grid size-12 place-items-center rounded-2xl bg-white text-2xl shadow-sm" aria-hidden="true">⇧</span>
+                  <span class="mt-4 block font-semibold text-slate-900">Drop a CSV or Excel file here</span>
+                  <span class="mt-1 block text-sm text-slate-500">or click to browse your device</span>
+                  <input id="file-input" class="sr-only" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+                </label>
+                <p id="upload-help" class="sr-only">The selected file is read by JavaScript in your browser and is not submitted to an application server by this tool.</p>
+
+                <div class="mt-4 rounded-2xl border border-slate-200/70 bg-white/70 p-4">
+                  <p id="file-name" class="truncate text-sm font-semibold text-slate-800">No file selected</p>
+                  <p id="file-meta" class="mt-1 text-xs text-slate-500">CSV, XLSX or XLS · up to 100 MB</p>
+                </div>
+              </section>
+
+              <section class="glass-strong rounded-[1.5rem] p-5" aria-labelledby="settings-heading">
+                <div class="mb-4">
+                  <h3 id="settings-heading" class="font-semibold text-slate-950">2. Transformation rules</h3>
+                  <p class="mt-1 text-sm leading-6 text-slate-500">Rules are explicit so the same input and settings produce predictable output.</p>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <label id="sheet-control" class="hidden text-sm font-medium text-slate-700">
+                    Worksheet
+                    <select id="sheet-select" class="control-input mt-2"></select>
+                  </label>
+
+                  <label class="text-sm font-medium text-slate-700">
+                    Header row
+                    <input id="header-row" class="control-input mt-2" type="number" inputmode="numeric" min="1" step="1" value="1" aria-describedby="header-help" />
+                    <span id="header-help" class="mt-1 block text-xs font-normal text-slate-400">1 = first spreadsheet row.</span>
+                  </label>
+                </div>
+
+                <div class="mt-5 grid gap-3 sm:grid-cols-2">
+                  <label class="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200/70 bg-white/70 p-3.5">
+                    <input id="trim-headers" type="checkbox" checked class="mt-1 size-4 accent-blue-600" />
+                    <span><span class="block text-sm font-semibold text-slate-800">Trim headers</span><span class="mt-0.5 block text-xs leading-5 text-slate-500">Remove surrounding whitespace.</span></span>
+                  </label>
+
+                  <label class="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200/70 bg-white/70 p-3.5">
+                    <input id="normalize-headers" type="checkbox" class="mt-1 size-4 accent-blue-600" />
+                    <span><span class="block text-sm font-semibold text-slate-800">Normalize keys</span><span class="mt-0.5 block text-xs leading-5 text-slate-500">Convert punctuation/spaces to underscores.</span></span>
+                  </label>
+
+                  <label class="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200/70 bg-white/70 p-3.5">
+                    <input id="skip-empty-rows" type="checkbox" checked class="mt-1 size-4 accent-blue-600" />
+                    <span><span class="block text-sm font-semibold text-slate-800">Skip empty rows</span><span class="mt-0.5 block text-xs leading-5 text-slate-500">Exclude blank spreadsheet rows.</span></span>
+                  </label>
+
+                  <label class="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200/70 bg-white/70 p-3.5">
+                    <input id="omit-empty-values" type="checkbox" class="mt-1 size-4 accent-blue-600" />
+                    <span><span class="block text-sm font-semibold text-slate-800">Omit empty fields</span><span class="mt-0.5 block text-xs leading-5 text-slate-500">Otherwise empty values become null.</span></span>
+                  </label>
+
+                  <label class="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200/70 bg-white/70 p-3.5 sm:col-span-2">
+                    <input id="pretty-json" type="checkbox" checked class="mt-1 size-4 accent-blue-600" />
+                    <span><span class="block text-sm font-semibold text-slate-800">Pretty-print JSON</span><span class="mt-0.5 block text-xs leading-5 text-slate-500">Readable indentation. Disable for smaller output files.</span></span>
+                  </label>
+                </div>
+
+                <div id="tool-actions" class="mt-5 grid gap-3 sm:grid-cols-2">
+                  <button id="transform-btn" type="button" disabled class="rounded-2xl bg-slate-950 px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-950/10 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40">Transform to JSON</button>
+                  <button id="reset-btn" type="button" class="rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">Reset workspace</button>
+                </div>
+              </section>
+
+              <section id="status-panel" data-state="idle" class="glass-strong rounded-[1.5rem] p-5" aria-live="polite" aria-atomic="true">
+                <div class="flex items-start gap-3">
+                  <span class="status-icon grid size-10 shrink-0 place-items-center rounded-2xl font-bold" aria-hidden="true">•</span>
+                  <div class="min-w-0 flex-1">
+                    <h3 id="status-title" class="font-semibold text-slate-900">Waiting for a file</h3>
+                    <p id="status-message" class="mt-1 text-sm leading-6 text-slate-500">Select or drop a CSV or Excel file. Processing happens only in your browser.</p>
+                  </div>
+                </div>
+
+                <div id="progress-wrap" class="mt-4 hidden">
+                  <div class="flex items-center justify-between text-xs font-medium text-slate-500">
+                    <span>Processing</span><span id="progress-label">0%</span>
+                  </div>
+                  <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div id="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" class="h-full w-0 rounded-full bg-gradient-to-r from-blue-600 to-violet-600 transition-[width] duration-150"></div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div class="space-y-5">
+              <section class="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Dataset metrics">
+                <article class="glass-strong rounded-2xl p-4"><p class="text-xs font-medium uppercase tracking-[.14em] text-slate-400">Rows</p><p id="metric-rows" class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">0</p></article>
+                <article class="glass-strong rounded-2xl p-4"><p class="text-xs font-medium uppercase tracking-[.14em] text-slate-400">Columns</p><p id="metric-columns" class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">0</p></article>
+                <article class="glass-strong rounded-2xl p-4"><p class="text-xs font-medium uppercase tracking-[.14em] text-slate-400">File size</p><p id="metric-size" class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">—</p></article>
+                <article class="glass-strong rounded-2xl p-4"><p class="text-xs font-medium uppercase tracking-[.14em] text-slate-400">Parse</p><p id="metric-time" class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">—</p></article>
+              </section>
+
+              <section class="overflow-hidden rounded-[1.5rem] border border-slate-800 bg-slate-950 shadow-2xl shadow-slate-950/10" aria-labelledby="preview-heading">
+                <div class="flex flex-col gap-3 border-b border-white/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 id="preview-heading" class="font-semibold text-white">JSON preview</h3>
+                    <p id="preview-note" class="mt-1 text-xs text-slate-400">Preview is limited to keep the interface fast.</p>
+                  </div>
+                  <div class="flex gap-2">
+                    <button id="copy-btn" type="button" disabled class="rounded-xl bg-white/10 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-30">Copy all JSON</button>
+                    <button id="download-btn" type="button" disabled class="rounded-xl bg-blue-500 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-30">Download JSON</button>
+                  </div>
+                </div>
+                <pre class="max-h-[38rem] min-h-[28rem] overflow-auto p-5 text-[13px] leading-6 text-slate-300" aria-label="JSON preview"><code id="preview-output">[
+  // Your JSON preview will appear here
+]</code></pre>
+              </section>
+
+              <section class="glass-strong rounded-[1.5rem] p-5" aria-labelledby="audit-heading">
+                <div class="flex items-center justify-between gap-4">
+                  <div>
+                    <h3 id="audit-heading" class="font-semibold text-slate-950">Local audit trail</h3>
+                    <p class="mt-1 text-sm leading-6 text-slate-500">User-visible processing states for traceability. This log lives only in page memory.</p>
+                  </div>
+                  <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">Session only</span>
+                </div>
+                <ol id="audit-log" class="mt-4 space-y-4"></ol>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="security" class="scroll-mt-24 py-20" aria-labelledby="security-title">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid gap-8 lg:grid-cols-[.9fr_1.1fr] lg:items-start">
+          <div class="lg:sticky lg:top-28">
+            <p class="text-sm font-semibold uppercase tracking-[.2em] text-emerald-600">Privacy + quality controls</p>
+            <h2 id="security-title" class="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-5xl">A secure data converter starts by minimizing data movement.</h2>
+            <p class="mt-5 text-lg leading-8 text-slate-600">Many online file converters require a spreadsheet upload before transformation. This client-side CSV parser and privacy-first Excel to JSON workflow instead processes the selected source file in the browser, reducing unnecessary transfer of business, customer, financial, or operational data.</p>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <article class="glass-strong rounded-[1.6rem] p-6">
+              <span class="grid size-11 place-items-center rounded-2xl bg-emerald-50 text-emerald-700" aria-hidden="true">01</span>
+              <h3 class="mt-5 text-xl font-semibold text-slate-950">Data minimization by design</h3>
+              <p class="mt-2 leading-7 text-slate-600">The application does not need an API endpoint to receive your source spreadsheet. File parsing, transformation, preview, copy, and download occur on the client.</p>
+            </article>
+
+            <article class="glass-strong rounded-[1.6rem] p-6">
+              <span class="grid size-11 place-items-center rounded-2xl bg-blue-50 text-blue-700" aria-hidden="true">02</span>
+              <h3 class="mt-5 text-xl font-semibold text-slate-950">Input validation</h3>
+              <p class="mt-2 leading-7 text-slate-600">The infrastructure layer validates file presence, extension, non-zero size, and an explicit 100 MB browser safety limit before parsing begins.</p>
+            </article>
+
+            <article class="glass-strong rounded-[1.6rem] p-6">
+              <span class="grid size-11 place-items-center rounded-2xl bg-violet-50 text-violet-700" aria-hidden="true">03</span>
+              <h3 class="mt-5 text-xl font-semibold text-slate-950">Deterministic transformation rules</h3>
+              <p class="mt-2 leading-7 text-slate-600">Header-row selection, duplicate key handling, blank-row filtering, null handling, and key normalization are explicit domain rules—not hidden UI behavior.</p>
+            </article>
+
+            <article class="glass-strong rounded-[1.6rem] p-6">
+              <span class="grid size-11 place-items-center rounded-2xl bg-amber-50 text-amber-700" aria-hidden="true">04</span>
+              <h3 class="mt-5 text-xl font-semibold text-slate-950">Traceable user states</h3>
+              <p class="mt-2 leading-7 text-slate-600">A visible session audit trail records parsing, transformation, export, reset, and error states so users can understand what the application did and when.</p>
+            </article>
+          </div>
+        </div>
+
+        <article class="mt-10 rounded-[2rem] border border-slate-200 bg-white/80 p-6 shadow-sm sm:p-8" aria-labelledby="iso-heading">
+          <div class="grid gap-6 lg:grid-cols-[.72fr_1.28fr] lg:items-center">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[.2em] text-slate-400">ISO 9001-aligned engineering practices</p>
+              <h3 id="iso-heading" class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Quality controls without making a false certification claim.</h3>
+            </div>
+            <p class="leading-7 text-slate-600">This project applies quality-management-inspired practices such as separation of responsibilities, documented validation, controlled error states, traceable processing events, deterministic rules, and maintainable modules. It does <strong>not</strong> claim that the website or its operator is ISO 9001 certified; formal certification requires an audited organizational quality management system.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="how-it-works" class="scroll-mt-24 py-20" aria-labelledby="how-title">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-3xl text-center">
+          <p class="text-sm font-semibold uppercase tracking-[.2em] text-violet-600">How the local transformer works</p>
+          <h2 id="how-title" class="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-5xl">Clean architecture from file input to JSON output.</h2>
+          <p class="mt-4 text-lg leading-8 text-slate-600">The codebase separates domain transformation rules, SheetJS parsing infrastructure, and user-interface orchestration so each concern can be tested and changed independently.</p>
+        </div>
+
+        <div class="mt-10 grid gap-5 md:grid-cols-3">
+          <article class="glass-strong rounded-[1.6rem] p-6">
+            <p class="text-xs font-semibold uppercase tracking-[.16em] text-blue-600">Infrastructure</p>
+            <h3 class="mt-3 text-xl font-semibold">Parse CSV and Excel</h3>
+            <p class="mt-3 leading-7 text-slate-600"><code class="rounded bg-slate-100 px-1.5 py-1 text-sm">src/infra/parser.js</code> validates the file, invokes SheetJS, selects worksheets, and uses a Web Worker when available.</p>
+          </article>
+          <article class="glass-strong rounded-[1.6rem] p-6">
+            <p class="text-xs font-semibold uppercase tracking-[.16em] text-violet-600">Core / domain</p>
+            <h3 class="mt-3 text-xl font-semibold">Transform deterministically</h3>
+            <p class="mt-3 leading-7 text-slate-600"><code class="rounded bg-slate-100 px-1.5 py-1 text-sm">src/core/transformer.js</code> owns header safety, record creation, empty-value rules, chunking, and JSON serialization.</p>
+          </article>
+          <article class="glass-strong rounded-[1.6rem] p-6">
+            <p class="text-xs font-semibold uppercase tracking-[.16em] text-emerald-600">Presentation</p>
+            <h3 class="mt-3 text-xl font-semibold">Communicate every state</h3>
+            <p class="mt-3 leading-7 text-slate-600"><code class="rounded bg-slate-100 px-1.5 py-1 text-sm">src/ui/uiController.js</code> handles events, progress, accessibility announcements, preview, download, reset, and audit feedback.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-20" aria-labelledby="usecases-title">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="glass rounded-[2rem] p-6 sm:p-10 lg:p-12">
+          <div class="grid gap-8 lg:grid-cols-[.82fr_1.18fr]">
+            <div>
+              <p class="text-sm font-semibold uppercase tracking-[.2em] text-blue-600">Problem → solution</p>
+              <h2 id="usecases-title" class="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">When local spreadsheet conversion is the better workflow.</h2>
+            </div>
+            <div class="grid gap-5 sm:grid-cols-2">
+              <article><h3 class="font-semibold text-slate-950">Developer fixtures & API payloads</h3><p class="mt-2 leading-7 text-slate-600">Turn spreadsheet test data into JSON records for local development, prototyping, migrations, mocks, and integration testing.</p></article>
+              <article><h3 class="font-semibold text-slate-950">Customer or operational exports</h3><p class="mt-2 leading-7 text-slate-600">Transform internal spreadsheets without intentionally sending the source dataset to a third-party application conversion endpoint.</p></article>
+              <article><h3 class="font-semibold text-slate-950">Large recurring data cleanup</h3><p class="mt-2 leading-7 text-slate-600">Use predictable header and blank-value rules to make bulk conversion repeatable before importing JSON elsewhere.</p></article>
+              <article><h3 class="font-semibold text-slate-950">Offline-style workflows</h3><p class="mt-2 leading-7 text-slate-600">Once required libraries are available in the browser cache or self-hosted, the transformation itself needs no backend processing service.</p></article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="scroll-mt-24 py-20" aria-labelledby="faq-title">
+      <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <div class="text-center">
+          <p class="text-sm font-semibold uppercase tracking-[.2em] text-blue-600">CSV / Excel to JSON FAQ</p>
+          <h2 id="faq-title" class="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-5xl">Answers for users and answer engines.</h2>
+          <p class="mt-4 text-lg leading-8 text-slate-600">Clear, concise explanations of the privacy, performance, and data-conversion model behind this client-side tool.</p>
+        </div>
+
+        <div class="mt-10 space-y-4">
+          <details class="glass-strong group rounded-2xl p-5">
+            <summary class="cursor-pointer list-none font-semibold text-slate-950 marker:hidden">Is my CSV or Excel file uploaded to a server?</summary>
+            <p class="mt-3 leading-7 text-slate-600">No. The selected source file is read in the browser and is not submitted to an application server by this tool. SheetJS parses the spreadsheet locally, and the transformed JSON is kept in browser memory until you copy, download, reset, reload, or close the page.</p>
+          </details>
+
+          <details class="glass-strong group rounded-2xl p-5">
+            <summary class="cursor-pointer list-none font-semibold text-slate-950 marker:hidden">Why does client-side CSV parsing matter for privacy?</summary>
+            <p class="mt-3 leading-7 text-slate-600">Client-side parsing reduces unnecessary data movement. Instead of transferring a spreadsheet to a remote converter, the browser can process it on the user device. This is especially useful when the file may contain customer, financial, HR, operational, or proprietary data.</p>
+          </details>
+
+          <details class="glass-strong group rounded-2xl p-5">
+            <summary class="cursor-pointer list-none font-semibold text-slate-950 marker:hidden">Can this convert XLSX and XLS workbooks with multiple sheets?</summary>
+            <p class="mt-3 leading-7 text-slate-600">Yes. When a workbook contains multiple worksheets, the interface exposes a worksheet selector. The selected sheet is reparsed locally and then transformed using the chosen header row and cleanup rules.</p>
+          </details>
+
+          <details class="glass-strong group rounded-2xl p-5">
+            <summary class="cursor-pointer list-none font-semibold text-slate-950 marker:hidden">How are duplicate or empty spreadsheet headers handled?</summary>
+            <p class="mt-3 leading-7 text-slate-600">Empty header cells receive deterministic names such as column_1. Duplicate headers receive a numeric suffix, such as email_2. Optional key normalization can also convert spaces and punctuation into underscore-based JSON keys.</p>
+          </details>
+
+          <details class="glass-strong group rounded-2xl p-5">
+            <summary class="cursor-pointer list-none font-semibold text-slate-950 marker:hidden">How does the tool avoid freezing on large datasets?</summary>
+            <p class="mt-3 leading-7 text-slate-600">Spreadsheet parsing runs in a Web Worker when supported. Transformation and serialization are split into chunks that yield control back to the browser between batches. Device memory and browser limits still matter, so extremely large files may require a desktop ETL pipeline.</p>
+          </details>
+
+          <details class="glass-strong group rounded-2xl p-5">
+            <summary class="cursor-pointer list-none font-semibold text-slate-950 marker:hidden">Is this an offline data transformer?</summary>
+            <p class="mt-3 leading-7 text-slate-600">The data transformation itself is local, but this CDN version initially loads Tailwind and SheetJS from external CDNs. For a truly offline deployment, vendor the required static assets and serve them from the same site or bundle them during build time.</p>
+          </details>
+
+          <details class="glass-strong group rounded-2xl p-5">
+            <summary class="cursor-pointer list-none font-semibold text-slate-950 marker:hidden">Does the site claim ISO 9001 certification?</summary>
+            <p class="mt-3 leading-7 text-slate-600">No. The implementation uses ISO 9001-inspired software quality practices such as traceability, controlled validation, modular responsibilities, and explicit error states. Certification applies to an audited organizational quality management system and must not be implied by code structure alone.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="pb-24 pt-8" aria-labelledby="cta-title">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="overflow-hidden rounded-[2rem] bg-slate-950 px-6 py-12 text-center text-white shadow-2xl shadow-indigo-950/20 sm:px-10 sm:py-16">
+          <p class="text-sm font-semibold uppercase tracking-[.2em] text-blue-300">Private by architecture</p>
+          <h2 id="cta-title" class="mx-auto mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-5xl">Transform the spreadsheet. Keep the source file on your device.</h2>
+          <p class="mx-auto mt-4 max-w-2xl leading-7 text-slate-300">Use the local CSV/Excel to JSON transformer for development, data cleanup, migrations, API preparation, and privacy-conscious internal workflows.</p>
+          <a href="#tool" class="mt-7 inline-flex rounded-2xl bg-white px-6 py-3.5 font-semibold text-slate-950 transition hover:bg-slate-100">Open the converter</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-200/70 bg-white/70">
+    <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 text-sm text-slate-500 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+      <p>© <span id="year">2026</span> Local Data Transformer. Client-side spreadsheet conversion.</p>
+      <div class="flex flex-wrap gap-4">
+        <a href="#security" class="hover:text-slate-900">Privacy architecture</a>
+        <a href="#faq" class="hover:text-slate-900">FAQ</a>
+        <a href="#top" class="hover:text-slate-900">Back to top</a>
+      </div>
+    </div>
+  </footer>
+
+  <noscript>
+    <div style="padding:1rem;background:#fee2e2;color:#991b1b;text-align:center;font-family:system-ui,sans-serif;">This local CSV/Excel to JSON converter requires JavaScript because all spreadsheet processing happens in the browser.</div>
+  </noscript>
+
+  <script type="module" src="./src/ui/uiController.js"></script>
+  <script>
+    document.getElementById('year').textContent = String(new Date().getFullYear());
+  </script>
+</body>
+</html>
