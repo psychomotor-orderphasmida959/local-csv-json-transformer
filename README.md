@@ -181,4 +181,4 @@ npx serve .
 
 ## License
 
-Add the license appropriate for your deployment before publishing publicly.
+This project is open-source and available under the [MIT License](LICENSE).
